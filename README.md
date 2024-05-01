@@ -1,6 +1,6 @@
-# PPKE International Semester - Budapest, Hungary
+# PPKE International Semester - Budapest, Hungary (Jan.2024 - Aug.2024)
 
-Welcome to my journey during the International Semester at [Pázmány Péter Catholic University Faculty of Information Technology and Bionics (PPKE)](https://maps.app.goo.gl/KbTyHPxR4smeeifYA) in Budapest, Hungary.
+Welcome to my journey during the International Semester (Jan.2024 - Aug.2024) at [Pázmány Péter Catholic University Faculty of Information Technology and Bionics (PPKE)](https://maps.app.goo.gl/KbTyHPxR4smeeifYA) in Budapest, Hungary.
 
 ## Overview
 During my time at PPKE, I delved into cutting-edge topics in robotics, exploring areas such as bionic robotic models, sensory robotics, parallel programming, and machine learning. This enriching experience not only broadened my academic horizons but also provided invaluable hands-on experience through an internship.
