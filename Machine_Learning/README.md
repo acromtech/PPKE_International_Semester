@@ -9,12 +9,13 @@
 
 ## Lab
 
-* [Lab 1 - Linear regression and PLA](lab/lab01-linear_regression/)
-* [Lab 2 - Logistic regression](lab/lab02-logical_regression/)
-* [Lab 3 - Nonlinear transformation](lab/lab03-non-linear_regression/)
-* [Lab 4 - Noise](lab/lab04-noise/)
-* [Lab 5 - Regularisation](lab/lab05-regularisation/)
-* [Lab 6 - Deep learning](lab/lab06-deep_learning/)
+* [Lab 1 - Linear regression and PLA](lab/lab01_linear_regression_and_PLA/)
+* [Lab 2 - Logistic regression](lab/lab02_logical_regression/)
+* [Lab 3 - Nonlinear transformation](lab/lab03_non-linear_regression/)
+* [Lab 4 - Noise](lab/lab04_noise/)
+* [Lab 5 - Regularisation](lab/lab05_regularisation/)
+* [Lab 6 - Deep learning](lab/lab06_deep_learning/)
+* [Lab 7 - SVM and PCA](lab/lab07_SVM_and_PCA/)
 
 ## Midterm
 May 7, 10:15-12:00, Lab 322.
