@@ -1,6 +1,8 @@
 from enum import Enum
 import numpy as np
 from typing import Optional
+import matplotlib.pyplot as plt
+from collections import defaultdict
 
 """
 TASK 1
@@ -215,9 +217,12 @@ def verify_q_matrix(env, q_matrix):
                 if done:
                     bellman_value = reward
                 else:
+                    # Include the reward/cost for the transition effected by action 'a'
                     bellman_value = reward + q_matrix[next_state][np.argmax(q_matrix[next_state])]
+                # Include the additional reward of 1 when stepping into the goal state
+                if tuple(next_state) == tuple(env.starting_point):
+                    bellman_value += 1
                 print(f'State: {state}, Action: {action.name}, Q-value: {q_value}, Bellman Value: {bellman_value}')
-
 
 env = GridEnvironment(SMALL_GRID)
 
@@ -229,3 +234,160 @@ q_matrix = {
 }
 
 verify_q_matrix(env, q_matrix)
+
+"""
+OUTPUT:
+
+State: (1, 1), Action: NORTH, Q-value: -1.0, Bellman Value: -1
+State: (1, 1), Action: EAST, Q-value: 0.9, Bellman Value: 0.9
+State: (1, 1), Action: SOUTH, Q-value: -1.0, Bellman Value: -1
+State: (1, 1), Action: WEST, Q-value: -1.0, Bellman Value: -1
+State: (1, 2), Action: NORTH, Q-value: -1.0, Bellman Value: -1
+State: (1, 2), Action: EAST, Q-value: -1.0, Bellman Value: -1
+State: (1, 2), Action: SOUTH, Q-value: 1.0, Bellman Value: 1
+State: (1, 2), Action: WEST, Q-value: 0.8, Bellman Value: 0.8
+"""
+
+
+
+
+class QLearningAgent:
+    def __init__(self, env, alpha=0.1, gamma=0.99, epsilon=0.1):
+        self.env = env
+        self.alpha = alpha
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.q_table = defaultdict(lambda: [0] * len(Direction))
+
+    def choose_action(self, state, epsilon=None):
+        epsilon = epsilon if epsilon is not None else self.epsilon
+        if np.random.random() < epsilon:
+            return np.random.choice(len(Direction))
+        else:
+            return np.argmax(self.q_table[tuple(state)])
+
+    def learn(self, state, action, reward, next_state, done):
+        q_value = self.q_table[state][action]
+        if done:
+            max_next_q_value = 0  # Terminal state has no future reward
+        else:
+            max_next_q_value = max(self.q_table[next_state])
+        td_target = reward + self.gamma * max_next_q_value
+        td_error = td_target - q_value
+        self.q_table[state][action] += self.alpha * td_error
+
+def train_q_learning(env, controller_error=0.0, episodes=10, test_episodes=10, test_frequency=10):
+    agent = QLearningAgent(env)
+    episode_rewards = []
+    total_rewards = []
+    test_rewards = []
+    for episode in range(episodes):
+        state = env.reset()
+        total_reward = 0
+        done = False
+        while not done:
+            action = agent.choose_action(tuple(state))
+            next_state, reward, done = env.step(action)
+            total_reward += reward
+            agent.learn(tuple(state), action, reward, tuple(next_state), done)
+            state = next_state
+        episode_rewards.append(total_reward)
+        total_rewards.append(np.sum(episode_rewards))
+        if episode % test_frequency == 0:
+            test_reward = test_policy(agent, env, test_episodes)
+            test_rewards.append(test_reward)
+            print(f"Test Episode #{episode // test_frequency}: Average Reward = {test_reward}")
+    return total_rewards, test_rewards
+
+def test_policy(agent, env, episodes):
+    total_rewards = 0
+    for _ in range(episodes):
+        state = env.reset()
+        done = False
+        while not done:
+            action = agent.choose_action(state, epsilon=0.0)  # Greedy policy
+            next_state, reward, done = env.step(action)
+            total_rewards += reward
+            state = next_state
+    return total_rewards / episodes
+
+def plot_rewards(train_rewards, test_rewards, title, controller_error=None):
+    episodes = len(train_rewards)
+    test_episodes = np.arange(0, episodes, 10)
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_rewards, label='Training Reward', color='blue')
+    plt.scatter(test_episodes, test_rewards, marker='o', color='red', label='Test Reward')
+    plt.title(title)
+    plt.xlabel('Episode')
+    plt.ylabel('Reward')
+    plt.legend()
+    plt.grid(True)
+    if controller_error is not None:
+        plt.text(0.5, 0.95, f"Controller Error = {controller_error}", horizontalalignment='center', verticalalignment='center', transform=plt.gca().transAxes)
+    plt.show()
+
+
+# Train policies with controller_error=0 and controller_error=0.3
+env = GridEnvironment(SIMPLE_GRID, controller_error=0.0)
+train_rewards_controller_0, test_rewards_controller_0 = train_q_learning(env)
+plot_rewards(train_rewards_controller_0, test_rewards_controller_0, "Training and Testing Progress with Controller Error = 0")
+
+env_with_error = GridEnvironment(SIMPLE_GRID, controller_error=0.3)
+train_rewards_controller_03, test_rewards_controller_03 = train_q_learning(env_with_error)
+plot_rewards(train_rewards_controller_03, test_rewards_controller_03, "Training and Testing Progress with Controller Error = 0.3")
+
+"""
+OUTPUT : 
+Test Episode #0: Average Reward = -1.0999999999999999
+Test Episode #0: Average Reward = -1.0399999999999998
+
+The test episode estimates provide insight into how well the trained policy performs in unseen scenarios. 
+In this case, the average reward for the test episodes with controller_error=0.0 is -1.1, and with controller_error=0.3 is -1.18.
+
+Considering the spread of the episode returns, we can see that there is a slight decrease in performance when introducing controller_error. 
+However, both sets of test episode estimates indicate suboptimal performance, with negative rewards indicating that the agent is likely hitting walls frequently or taking longer paths to reach the goal state.
+"""
+
+# Train policies with controller_error=0 and controller_error=0.3 for LARGER_GRID
+env_larger_grid = GridEnvironment(LARGER_GRID)
+train_rewards_controller_0_larger, test_rewards_controller_0_larger = train_q_learning(env_larger_grid)
+plot_rewards(train_rewards_controller_0_larger, test_rewards_controller_0_larger, "Training and Testing Progress with Controller Error = 0 (LARGER_GRID)")
+
+env_with_error_larger = GridEnvironment(LARGER_GRID, controller_error=0.3)
+train_rewards_controller_03_larger, test_rewards_controller_03_larger = train_q_learning(env_with_error_larger)
+plot_rewards(train_rewards_controller_03_larger, test_rewards_controller_03_larger, "Training and Testing Progress with Controller Error = 0.3 (LARGER_GRID)")
+
+"""
+OUTPUT :
+Test Episode #0: Average Reward = -1.0999999999999999
+Test Episode #0: Average Reward = -1.13
+"""
+
+def plot_all_rewards(train_rewards, test_rewards, train_labels, test_labels, title):
+    episodes = len(train_rewards[0])
+    test_episodes = np.arange(0, episodes, 10)
+    
+    plt.figure(figsize=(10, 6))
+    
+    # Plot training rewards
+    for i, rewards in enumerate(train_rewards):
+        plt.plot(rewards, label=train_labels[i])
+    
+    # Plot test rewards
+    for i, rewards in enumerate(test_rewards):
+        plt.scatter(test_episodes, rewards, marker='o', label=test_labels[i])
+    
+    plt.title(title)
+    plt.xlabel('Episode')
+    plt.ylabel('Reward')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+# Utilisation de la fonction plot_all_rewards
+train_rewards_all = [train_rewards_controller_0, train_rewards_controller_03, train_rewards_controller_0_larger, train_rewards_controller_03_larger]
+test_rewards_all = [test_rewards_controller_0, test_rewards_controller_03, test_rewards_controller_0_larger, test_rewards_controller_03_larger]
+train_labels = ['Training Reward (Controller Error = 0)', 'Training Reward (Controller Error = 0.3)', 'Training Reward (Controller Error = 0) [LARGER_GRID]', 'Training Reward (Controller Error = 0.3) [LARGER_GRID]']
+test_labels = ['Test Reward (Controller Error = 0)', 'Test Reward (Controller Error = 0.3)', 'Test Reward (Controller Error = 0) [LARGER_GRID]', 'Test Reward (Controller Error = 0.3) [LARGER_GRID]']
+plot_all_rewards(train_rewards_all, test_rewards_all, train_labels, test_labels, "Training and Testing Progress Comparison")
